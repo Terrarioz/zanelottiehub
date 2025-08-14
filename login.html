@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Welcome</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #000;
+            color: #fff;
+            font-family: 'Arial', sans-serif;
+            overflow: hidden;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+
+        .welcome-text {
+            font-size: 5rem;
+            font-weight: bold;
+            opacity: 0;
+            animation: fadeIn 2s ease-in-out forwards;
+            margin-bottom: 2rem;
+            font-family: 'Poppins', sans-serif;
+            text-shadow: 
+                0 0 10px rgba(255, 255, 255, 0.5),
+                0 0 20px rgba(255, 105, 180, 0.5),
+                0 5px 5px rgba(0, 0, 0, 0.5);
+            letter-spacing: 2px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .login-form {
+            opacity: 0;
+            animation: fadeIn 2s ease-in-out 1s forwards;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            width: 300px;
+            z-index: 1;
+        }
+
+        input {
+            padding: 0.8rem;
+            border-radius: 20px;
+            border: none;
+            background-color: rgba(255, 255, 255, 0.1);
+            color: white;
+            outline: none;
+            transition: all 0.3s;
+        }
+
+        input:focus {
+            background-color: rgba(255, 255, 255, 0.2);
+            box-shadow: 0 0 10px rgba(255, 105, 180, 0.5);
+        }
+
+        button {
+            padding: 0.8rem;
+            border-radius: 20px;
+            border: none;
+            background-color: rgba(255, 105, 180, 0.7);
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        button:hover {
+            background-color: rgba(255, 105, 180, 0.9);
+            transform: scale(1.05);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .heart {
+            position: absolute;
+            width: 25px;
+            height: 25px;
+            background-color: rgba(255, 105, 180, 0.7);
+            transform: rotate(45deg);
+            animation: float 6s linear infinite;
+            opacity: 0.8;
+            z-index: 0;
+            filter: drop-shadow(0 0 10px rgba(255, 105, 180, 0.8));
+        }
+
+        .heart:before, .heart:after {
+            content: '';
+            width: 25px;
+            height: 25px;
+            background-color: rgba(255, 105, 180, 0.7);
+            border-radius: 50%;
+            position: absolute;
+        }
+
+        .heart:before {
+            top: -12px;
+            left: 0;
+        }
+
+        .heart:after {
+            top: 0;
+            left: -12px;
+        }
+
+        @keyframes float {
+            0% {
+                transform: rotate(45deg) translateY(120vh) translateX(0) scale(0.8);
+                opacity: 0.8;
+            }
+            100% {
+                transform: rotate(45deg) translateY(-100px) translateX(0) scale(1.2);
+                opacity: 0;
+            }
+        }
+    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="welcome-text">Welcome</div>
+    <div class="login-form">
+        <input type="text" id="username" placeholder="Username">
+        <input type="password" id="password" placeholder="Password">
+        <button id="login-btn">Login</button>
+    </div>
+
+    <script>
+        // Create floating hearts immediately and more frequently
+        function createHearts() {
+            const heart = document.createElement('div');
+            heart.className = 'heart';
+            
+            // Random position
+            const startX = Math.random() * window.innerWidth;
+            heart.style.left = startX + 'px';
+            heart.style.animationDuration = (Math.random() * 4 + 3) + 's';
+            
+            document.body.appendChild(heart);
+            
+            // Remove heart after animation completes
+            setTimeout(() => {
+                heart.remove();
+            }, 7000);
+        }
+        
+        // Create initial batch of hearts
+        for (let i = 0; i < 15; i++) {
+            createHearts();
+        }
+        
+        // Create hearts more frequently
+        setInterval(createHearts, 300);
+        
+    // Login functionality - UPDATED
+    document.getElementById('login-btn').addEventListener('click', function() {
+        const username = document.getElementById('username').value;
+        const password = document.getElementById('password').value;
+        
+        // Valid accounts
+        const validAccounts = [
+            { username: "Zane", password: "0808" },
+            { username: "Charlotte", password: "Capricorn19!" }
+        ];
+        
+        // Check if credentials match
+        const isValid = validAccounts.some(account => 
+            account.username === username && account.password === password
+        );
+        
+        if (isValid) {
+            // Store username and redirect with parameter
+            localStorage.setItem('username', username);
+            window.location.href = 'index.html?user=' + encodeURIComponent(username);
+        } else {
+            alert('Password error!');
+        }
+    });
+</script>
+</body>
+</html>
