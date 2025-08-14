@@ -448,37 +448,6 @@
             box-shadow: 0 0 15px rgba(5, 217, 232, 0.5);
         }
     </style>
-<script type="module">
-// Import the functions you need from the SDKs you need
-import { initializeApp } from "firebase/app";
-// TODO: Add SDKs for Firebase products that you want to use
-// https://firebase.google.com/docs/web/setup#available-libraries
-
-// Your web app's Firebase configuration
-const firebaseConfig = {
-  apiKey: "AIzaSyDYAtGRe2mYyzoU0iurYKX4rt-WP7yUTaY",
-  authDomain: "zanelottiehub.firebaseapp.com",
-  projectId: "zanelottiehub",
-  storageBucket: "zanelottiehub.firebasestorage.app",
-  messagingSenderId: "1082631985410",
-  appId: "1:1082631985410:web:cdde430c33660088554a1b"
-};
-
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-  const db = getFirestore(app);
-
-  // 给全局使用
-  window.db = db;
-  window.collection = collection;
-  window.addDoc = addDoc;
-  window.onSnapshot = onSnapshot;
-  window.doc = doc;
-  window.updateDoc = updateDoc;
-  window.query = query;
-  window.orderBy = orderBy;
-</script>
-
 </head>
 <body>
     <!-- Greeting overlay -->
@@ -554,8 +523,35 @@ const app = initializeApp(firebaseConfig);
         setInterval(createHearts, 300);
     </script>
 
-    <!-- Main application logic -->
-    <script>
+    <!-- Firebase and main application logic -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.6.1/firebase-app.js";
+        import { 
+            getFirestore, 
+            collection, 
+            addDoc, 
+            onSnapshot, 
+            doc, 
+            updateDoc, 
+            query, 
+            orderBy,
+            serverTimestamp 
+        } from "https://www.gstatic.com/firebasejs/10.6.1/firebase-firestore.js";
+        
+        // Your web app's Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyDYAtGRe2mYyzoU0iurYKX4rt-WP7yUTaY",
+            authDomain: "zanelottiehub.firebaseapp.com",
+            projectId: "zanelottiehub",
+            storageBucket: "zanelottiehub.firebasestorage.app",
+            messagingSenderId: "1082631985410",
+            appId: "1:1082631985410:web:cdde430c33660088554a1b"
+        };
+        
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        
         document.addEventListener('DOMContentLoaded', function() {
             // Get username from URL or localStorage
             const urlParams = new URLSearchParams(window.location.search);
@@ -583,81 +579,85 @@ const app = initializeApp(firebaseConfig);
             const postForm = document.getElementById('post-form');
             const postsContainer = document.getElementById('posts-container');
             
-            // Sample posts data
-            let posts = [
-                {
-                    id: 1,
-                    title: 'Welcome to the Dashboard',
-                    content: 'This is your first post. Click on it to view details and add replies.',
-                    author: username,
-                    replies: []
-                }
-            ];
+            // Firestore references
+            const postsCollection = collection(db, "posts");
+            const postsQuery = query(postsCollection, orderBy("createdAt", "desc"));
             
-            // Render posts
-            function renderPosts() {
+            // Real-time posts listener
+            const unsubscribe = onSnapshot(postsQuery, (snapshot) => {
                 postsContainer.innerHTML = '';
-                posts.forEach(post => {
+                
+                snapshot.forEach((doc) => {
+                    const post = doc.data();
                     const postElement = document.createElement('div');
                     postElement.className = 'post-card';
                     postElement.innerHTML = `
                         <h3 class="post-title">${post.title}</h3>
                         <p class="post-preview">${post.content.split('\n')[0].substring(0, 100)}...</p>
                     `;
-                    postElement.addEventListener('click', () => viewPost(post.id));
+                    postElement.addEventListener('click', () => viewPost(doc.id));
                     postsContainer.appendChild(postElement);
                 });
-            }
+            }, (error) => {
+                console.error("Error getting posts: ", error);
+            });
             
             // View post
             function viewPost(postId) {
-                const post = posts.find(p => p.id === postId);
-                if (!post) return;
+                const postDoc = doc(db, "posts", postId);
                 
-                const postView = document.getElementById('post-view-content');
-                postView.innerHTML = `
-                    <h2>${post.title}</h2>
-                    <p class="post-author">Posted by ${post.author}</p>
-                    <div class="post-content">${post.content.replace(/\n/g, '<br>')}</div>
+                onSnapshot(postDoc, (doc) => {
+                    if (!doc.exists()) return;
                     
-                    <div class="replies">
-                        <h3>Replies (${post.replies.length})</h3>
-                        ${post.replies.map(reply => `
-                            <div class="reply">
-                                <div class="reply-author">${reply.author}</div>
-                                <div class="reply-content">${reply.content.replace(/\n/g, '<br>')}</div>
-                            </div>
-                        `).join('')}
+                    const post = doc.data();
+                    const postView = document.getElementById('post-view-content');
+                    postView.innerHTML = `
+                        <h2>${post.title}</h2>
+                        <p class="post-author">Posted by ${post.author}</p>
+                        <div class="post-content">${post.content.replace(/\n/g, '<br>')}</div>
                         
-                        <div class="reply-form">
-                            <h3>Add Reply</h3>
-                            <textarea id="reply-content" placeholder="Write your reply..."></textarea>
-                            <button class="reply-btn" onclick="addReply(${post.id})">Post Reply</button>
+                        <div class="replies">
+                            <h3>Replies (${post.replies?.length || 0})</h3>
+                            ${(post.replies || []).map(reply => `
+                                <div class="reply">
+                                    <div class="reply-author">${reply.author}</div>
+                                    <div class="reply-content">${reply.content.replace(/\n/g, '<br>')}</div>
+                                </div>
+                            `).join('')}
+                            
+                            <div class="reply-form">
+                                <h3>Add Reply</h3>
+                                <textarea id="reply-content" placeholder="Write your reply..."></textarea>
+                                <button class="reply-btn" onclick="addReply('${doc.id}')">Post Reply</button>
+                            </div>
                         </div>
-                    </div>
-                `;
-                
-                viewPostModal.style.display = 'flex';
+                    `;
+                    
+                    viewPostModal.style.display = 'flex';
+                });
             }
             
             // Add reply (needs to be global for onclick)
-            window.addReply = function(postId) {
+            window.addReply = async function(postId) {
                 const replyContent = document.getElementById('reply-content').value;
                 if (!replyContent.trim()) return;
                 
-                const post = posts.find(p => p.id === postId);
-                if (post) {
-                    post.replies.push({
-                        author: username,
-                        content: replyContent,
-                        date: new Date().toISOString()
+                const username = document.getElementById('username-display').textContent;
+                const postRef = doc(db, "posts", postId);
+                
+                try {
+                    await updateDoc(postRef, {
+                        replies: [...(post.replies || []), {
+                            author: username,
+                            content: replyContent,
+                            createdAt: serverTimestamp()
+                        }]
                     });
-                    
-                    // Re-render the post view
-                    viewPost(postId);
                     
                     // Clear the textarea
                     document.getElementById('reply-content').value = '';
+                } catch (error) {
+                    console.error("Error adding reply: ", error);
                 }
             };
             
@@ -683,32 +683,30 @@ const app = initializeApp(firebaseConfig);
             });
             
             // Form submission
-            postForm.addEventListener('submit', (e) => {
+            postForm.addEventListener('submit', async (e) => {
                 e.preventDefault();
                 
                 const title = document.getElementById('post-title').value;
                 const content = document.getElementById('post-content').value;
                 
                 if (title.trim() && content.trim()) {
-                    const newPost = {
-                        id: Date.now(),
-                        title,
-                        content,
-                        author: username,
-                        replies: []
-                    };
-                    
-                    posts.unshift(newPost);
-                    renderPosts();
-                    
-                    // Reset form and close modal
-                    postForm.reset();
-                    postModal.style.display = 'none';
+                    try {
+                        await addDoc(postsCollection, {
+                            title,
+                            content,
+                            author: username,
+                            replies: [],
+                            createdAt: serverTimestamp()
+                        });
+                        
+                        // Reset form and close modal
+                        postForm.reset();
+                        postModal.style.display = 'none';
+                    } catch (error) {
+                        console.error("Error adding post: ", error);
+                    }
                 }
             });
-            
-            // Initial render
-            renderPosts();
         });
     </script>
 </body>
