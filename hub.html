@@ -524,170 +524,170 @@
     </script>
 
     <!-- Main application logic -->
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.6.1/firebase-app.js";
-import { 
-  getFirestore, 
-  collection, 
-  addDoc, 
-  onSnapshot, 
-  doc, 
-  updateDoc, 
-  query, 
-  orderBy,
-  serverTimestamp 
-} from "https://www.gstatic.com/firebasejs/10.6.1/firebase-firestore.js";
-
-// Initialize Firebase
-const firebaseConfig = {
-  apiKey: "AIzaSyDYAtGRe2mYyzoU0iurYKX4rt-WP7yUTaY",
-  authDomain: "zanelottiehub.firebaseapp.com",
-  projectId: "zanelottiehub",
-  storageBucket: "zanelottiehub.firebasestorage.app",
-  messagingSenderId: "1082631985410",
-  appId: "1:1082631985410:web:cdde430c33660088554a1b"
-};
-
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
-
-// DOM elements
-const postsContainer = document.getElementById('posts-container');
-const postForm = document.getElementById('post-form');
-const viewPostModal = document.getElementById('view-post-modal');
-const postViewContent = document.getElementById('post-view-content');
-
-// Firestore references
-const postsCol = collection(db, "posts");
-const postsQuery = query(postsCol, orderBy("createdAt", "desc"));
-
-// ---------- Real-time Posts Listener ----------
-const unsubscribePosts = onSnapshot(postsQuery, (snapshot) => {
-  postsContainer.innerHTML = '';
-  
-  snapshot.forEach(docSnap => {
-    const post = docSnap.data();
-    post.id = docSnap.id; // Add document ID to post object
+    <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.6.1/firebase-app.js";
+    import { 
+      getFirestore, 
+      collection, 
+      addDoc, 
+      onSnapshot, 
+      doc, 
+      updateDoc, 
+      query, 
+      orderBy,
+      serverTimestamp 
+    } from "https://www.gstatic.com/firebasejs/10.6.1/firebase-firestore.js";
     
-    const postElement = document.createElement('div');
-    postElement.className = 'post-card';
-    postElement.innerHTML = `
-      <h3 class="post-title">${post.title}</h3>
-      <p class="post-preview">${post.content.split('\n')[0].substring(0, 100)}...</p>
-      <small>${formatDate(post.createdAt?.toDate())}</small>
-    `;
-    postElement.addEventListener('click', () => viewPost(post.id));
-    postsContainer.appendChild(postElement);
-  });
-});
-
-// ---------- Create New Post ----------
-postForm.addEventListener('submit', async (e) => {
-  e.preventDefault();
-  
-  const title = document.getElementById('post-title').value;
-  const content = document.getElementById('post-content').value;
-  const username = document.getElementById('username-display').textContent;
-
-  if (!title.trim() || !content.trim()) return;
-
-  try {
-    await addDoc(postsCol, {
-      title,
-      content,
-      author: username,
-      createdAt: serverTimestamp(), // Use server timestamp
-      replies: [],
-      likes: 0
+    // Initialize Firebase
+    const firebaseConfig = {
+      apiKey: "AIzaSyDYAtGRe2mYyzoU0iurYKX4rt-WP7yUTaY",
+      authDomain: "zanelottiehub.firebaseapp.com",
+      projectId: "zanelottiehub",
+      storageBucket: "zanelottiehub.firebasestorage.app",
+      messagingSenderId: "1082631985410",
+      appId: "1:1082631985410:web:cdde430c33660088554a1b"
+    };
+    
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    
+    // DOM elements
+    const postsContainer = document.getElementById('posts-container');
+    const postForm = document.getElementById('post-form');
+    const viewPostModal = document.getElementById('view-post-modal');
+    const postViewContent = document.getElementById('post-view-content');
+    
+    // Firestore references
+    const postsCol = collection(db, "posts");
+    const postsQuery = query(postsCol, orderBy("createdAt", "desc"));
+    
+    // ---------- Real-time Posts Listener ----------
+    const unsubscribePosts = onSnapshot(postsQuery, (snapshot) => {
+      postsContainer.innerHTML = '';
+      
+      snapshot.forEach(docSnap => {
+        const post = docSnap.data();
+        post.id = docSnap.id; // Add document ID to post object
+        
+        const postElement = document.createElement('div');
+        postElement.className = 'post-card';
+        postElement.innerHTML = `
+          <h3 class="post-title">${post.title}</h3>
+          <p class="post-preview">${post.content.split('\n')[0].substring(0, 100)}...</p>
+          <small>${formatDate(post.createdAt?.toDate())}</small>
+        `;
+        postElement.addEventListener('click', () => viewPost(post.id));
+        postsContainer.appendChild(postElement);
+      });
     });
     
-    postForm.reset();
-    document.getElementById('post-modal').style.display = 'none';
-  } catch (error) {
-    console.error("Error adding post: ", error);
-  }
-});
-
-// ---------- View Post & Handle Replies ----------
-async function viewPost(postId) {
-  const postDoc = doc(db, "posts", postId);
-  
-  // Real-time listener for this specific post
-  const unsubscribePost = onSnapshot(postDoc, (docSnap) => {
-    if (!docSnap.exists()) return;
-    
-    const post = docSnap.data();
-    postViewContent.innerHTML = `
-      <h2>${post.title}</h2>
-      <p class="post-author">Posted by ${post.author} • ${formatDate(post.createdAt?.toDate())}</p>
-      <div class="post-content">${post.content.replace(/\n/g,'<br>')}</div>
+    // ---------- Create New Post ----------
+    postForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
       
-      <div class="replies">
-        <h3>Replies (${post.replies?.length || 0})</h3>
-        ${(post.replies || []).map(reply => `
-          <div class="reply">
-            <div class="reply-author">${reply.author}</div>
-            <div class="reply-content">${reply.content.replace(/\n/g,'<br>')}</div>
-            <small>${formatDate(reply.createdAt?.toDate())}</small>
-          </div>
-        `).join('')}
-        
-        <div class="reply-form">
-          <textarea id="reply-content" placeholder="Write your reply..."></textarea>
-          <button class="reply-btn">Post Reply</button>
-        </div>
-      </div>
-    `;
-
-    // Handle reply submission
-    postViewContent.querySelector('.reply-btn').onclick = async () => {
-      const replyContent = postViewContent.querySelector('#reply-content').value;
-      if (!replyContent.trim()) return;
-      
+      const title = document.getElementById('post-title').value;
+      const content = document.getElementById('post-content').value;
       const username = document.getElementById('username-display').textContent;
-      
+    
+      if (!title.trim() || !content.trim()) return;
+    
       try {
-        await updateDoc(postDoc, {
-          replies: [...(post.replies || []), { 
-            author: username, 
-            content: replyContent, 
-            createdAt: serverTimestamp() 
-          }]
+        await addDoc(postsCol, {
+          title,
+          content,
+          author: username,
+          createdAt: serverTimestamp(), // Use server timestamp
+          replies: [],
+          likes: 0
         });
-        postViewContent.querySelector('#reply-content').value = '';
+        
+        postForm.reset();
+        document.getElementById('post-modal').style.display = 'none';
       } catch (error) {
-        console.error("Error adding reply: ", error);
+        console.error("Error adding post: ", error);
       }
-    };
-  });
-
-  // Store unsubscribe function to clean up later
-  postViewContent._unsubscribe = unsubscribePost;
-  viewPostModal.style.display = 'flex';
-}
-
-// Close modal cleanup
-document.querySelector('#view-post-modal .close-modal').addEventListener('click', () => {
-  if (postViewContent._unsubscribe) {
-    postViewContent._unsubscribe();
-    delete postViewContent._unsubscribe;
-  }
-});
-
-// Helper function to format dates
-function formatDate(date) {
-  if (!date) return '';
-  return date.toLocaleString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit'
-  });
-}
-
-// Make viewPost available globally
-window.viewPost = viewPost;
-</script>
+    });
+    
+    // ---------- View Post & Handle Replies ----------
+    async function viewPost(postId) {
+      const postDoc = doc(db, "posts", postId);
+      
+      // Real-time listener for this specific post
+      const unsubscribePost = onSnapshot(postDoc, (docSnap) => {
+        if (!docSnap.exists()) return;
+        
+        const post = docSnap.data();
+        postViewContent.innerHTML = `
+          <h2>${post.title}</h2>
+          <p class="post-author">Posted by ${post.author} • ${formatDate(post.createdAt?.toDate())}</p>
+          <div class="post-content">${post.content.replace(/\n/g,'<br>')}</div>
+          
+          <div class="replies">
+            <h3>Replies (${post.replies?.length || 0})</h3>
+            ${(post.replies || []).map(reply => `
+              <div class="reply">
+                <div class="reply-author">${reply.author}</div>
+                <div class="reply-content">${reply.content.replace(/\n/g,'<br>')}</div>
+                <small>${formatDate(reply.createdAt?.toDate())}</small>
+              </div>
+            `).join('')}
+            
+            <div class="reply-form">
+              <textarea id="reply-content" placeholder="Write your reply..."></textarea>
+              <button class="reply-btn">Post Reply</button>
+            </div>
+          </div>
+        `;
+    
+        // Handle reply submission
+        postViewContent.querySelector('.reply-btn').onclick = async () => {
+          const replyContent = postViewContent.querySelector('#reply-content').value;
+          if (!replyContent.trim()) return;
+          
+          const username = document.getElementById('username-display').textContent;
+          
+          try {
+            await updateDoc(postDoc, {
+              replies: [...(post.replies || []), { 
+                author: username, 
+                content: replyContent, 
+                createdAt: serverTimestamp() 
+              }]
+            });
+            postViewContent.querySelector('#reply-content').value = '';
+          } catch (error) {
+            console.error("Error adding reply: ", error);
+          }
+        };
+      });
+    
+      // Store unsubscribe function to clean up later
+      postViewContent._unsubscribe = unsubscribePost;
+      viewPostModal.style.display = 'flex';
+    }
+    
+    // Close modal cleanup
+    document.querySelector('#view-post-modal .close-modal').addEventListener('click', () => {
+      if (postViewContent._unsubscribe) {
+        postViewContent._unsubscribe();
+        delete postViewContent._unsubscribe;
+      }
+    });
+    
+    // Helper function to format dates
+    function formatDate(date) {
+      if (!date) return '';
+      return date.toLocaleString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    }
+    
+    // Make viewPost available globally
+    window.viewPost = viewPost;
+    </script>
 </body>
-</html>/
+</html>
