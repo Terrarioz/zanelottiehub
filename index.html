@@ -179,7 +179,7 @@
         if (isValid) {
             // Store username and redirect with parameter
             localStorage.setItem('username', username);
-            window.location.href = 'index.html?user=' + encodeURIComponent(username);
+            window.location.href = 'hub.html?user=' + encodeURIComponent(username);
         } else {
             alert('Password error!');
         }
